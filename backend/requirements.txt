@@ -1,0 +1,20 @@
+# Backend dependencies for RAG application
+# Optimized for Render free tier (minimal footprint)
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# LLM API
+requests==2.31.0
+
+# Vector store and embeddings
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+
+# PDF processing
+pymupdf==1.23.7
+
+# Data validation
+pydantic==2.5.2
