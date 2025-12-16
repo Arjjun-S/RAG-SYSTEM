@@ -1,10 +1,16 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import Upload from './components/Upload'
 import Chat from './components/Chat'
 import Sources from './components/Sources'
 
-// API base URL - uses relative path with Vite proxy in dev, or configure for production
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+// API base URL: must be provided via VITE_API_URL in production.
+// Fallbacks help local dev but avoid 404 in production static hosting.
+const resolveApiBase = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  if (window?.__API_BASE) return window.__API_BASE
+  // Dev fallback to Vite proxy
+  return '/api'
+}
 
 function App() {
   const [documents, setDocuments] = useState([])
@@ -12,11 +18,22 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [stats, setStats] = useState({ total_chunks: 0 })
+  const [apiBase, setApiBase] = useState(resolveApiBase())
+
+  // Warn if API base is missing to avoid silent 404s in production
+  const apiConfigured = useMemo(() => !!apiBase && apiBase !== '/api', [apiBase])
+
+  useEffect(() => {
+    if (!apiConfigured) {
+      console.warn('VITE_API_URL is not set; falling back to /api (dev proxy). Set VITE_API_URL in production.')
+      setError('API URL not configured. Set VITE_API_URL to your backend URL.')
+    }
+  }, [apiConfigured])
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/stats`)
+      const res = await fetch(`${apiBase}/stats`)
       if (res.ok) {
         const data = await res.json()
         setStats(data)
@@ -35,7 +52,7 @@ function App() {
     formData.append('file', file)
 
     try {
-      const res = await fetch(`${API_BASE}/upload`, {
+      const res = await fetch(`${apiBase}/upload`, {
         method: 'POST',
         body: formData
       })
@@ -70,7 +87,7 @@ function App() {
     setResponse(null)
 
     try {
-      const res = await fetch(`${API_BASE}/ask`, {
+      const res = await fetch(`${apiBase}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -99,7 +116,7 @@ function App() {
   // Handle clear
   const handleClear = async () => {
     try {
-      const res = await fetch(`${API_BASE}/clear`, {
+      const res = await fetch(`${apiBase}/clear`, {
         method: 'POST'
       })
 
