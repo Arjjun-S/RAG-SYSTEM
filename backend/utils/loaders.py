@@ -37,7 +37,7 @@ def load_txt(content: bytes, filename: str) -> Tuple[str, dict]:
 
 def load_pdf(content: bytes, filename: str) -> Tuple[str, dict]:
     """
-    Load text from a PDF file using PyMuPDF (fitz).
+    Load text from a PDF file using pypdf.
     
     Args:
         content: Raw file bytes
@@ -47,25 +47,22 @@ def load_pdf(content: bytes, filename: str) -> Tuple[str, dict]:
         Tuple of (extracted_text, metadata)
     """
     try:
-        import fitz  # PyMuPDF
+        from pypdf import PdfReader
     except ImportError:
-        raise ImportError("PyMuPDF (fitz) is required for PDF processing. Install with: pip install pymupdf")
+        raise ImportError("pypdf is required for PDF processing. Install with: pip install pypdf")
     
     text_parts = []
     
     # Open PDF from bytes
     pdf_stream = io.BytesIO(content)
-    doc = fitz.open(stream=pdf_stream, filetype="pdf")
+    reader = PdfReader(pdf_stream)
     
-    num_pages = len(doc)
+    num_pages = len(reader.pages)
     
-    for page_num in range(num_pages):
-        page = doc[page_num]
-        text = page.get_text()
-        if text.strip():
+    for page in reader.pages:
+        text = page.extract_text()
+        if text and text.strip():
             text_parts.append(text)
-    
-    doc.close()
     
     full_text = "\n\n".join(text_parts)
     
