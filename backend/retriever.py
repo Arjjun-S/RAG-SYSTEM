@@ -1,39 +1,34 @@
 """
-FAISS-based vector retriever for semantic search.
-In-memory implementation optimized for Render free tier.
+TF-IDF based retriever for semantic search.
+Lightweight implementation using scikit-learn, optimized for Render free tier.
+No Rust compilation required.
 """
 import numpy as np
 from typing import List, Dict, Optional
-from sentence_transformers import SentenceTransformer
-import faiss
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-from config import EMBEDDING_MODEL, TOP_K_CHUNKS
+from config import TOP_K_CHUNKS
 
 
-class FAISSRetriever:
+class TFIDFRetriever:
     """
-    In-memory FAISS vector store for document retrieval.
+    In-memory TF-IDF vector store for document retrieval.
     Recreated on each startup (stateless design).
+    Uses scikit-learn - no Rust/FAISS dependencies.
     """
     
-    def __init__(self, model_name: str = EMBEDDING_MODEL):
-        """
-        Initialize the retriever with embedding model.
-        
-        Args:
-            model_name: SentenceTransformers model name
-        """
-        print(f"Loading embedding model: {model_name}")
-        self.model = SentenceTransformer(model_name)
-        self.dimension = self.model.get_sentence_embedding_dimension()
-        
-        # Initialize empty FAISS index (L2 distance)
-        self.index: Optional[faiss.IndexFlatL2] = None
-        
-        # Store chunk metadata
+    def __init__(self):
+        """Initialize the retriever."""
+        print("Initializing TF-IDF Retriever (lightweight mode)")
+        self.vectorizer = TfidfVectorizer(
+            max_features=5000,
+            stop_words='english',
+            ngram_range=(1, 2)
+        )
+        self.tfidf_matrix = None
         self.chunks: List[Dict] = []
-        
-        print(f"Retriever initialized with dimension: {self.dimension}")
+        print("Retriever initialized")
     
     def add_chunks(self, chunks: List[Dict]) -> int:
         """
@@ -48,26 +43,12 @@ class FAISSRetriever:
         if not chunks:
             return 0
         
-        # Extract texts
-        texts = [chunk["text"] for chunk in chunks]
-        
-        # Generate embeddings
-        embeddings = self.model.encode(
-            texts,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-            normalize_embeddings=True
-        )
-        
-        # Initialize index if needed
-        if self.index is None:
-            self.index = faiss.IndexFlatL2(self.dimension)
-        
-        # Add to FAISS
-        self.index.add(embeddings.astype('float32'))
-        
-        # Store metadata
+        # Add new chunks
         self.chunks.extend(chunks)
+        
+        # Re-fit vectorizer on all texts
+        texts = [chunk["text"] for chunk in self.chunks]
+        self.tfidf_matrix = self.vectorizer.fit_transform(texts)
         
         return len(chunks)
     
@@ -82,32 +63,28 @@ class FAISSRetriever:
         Returns:
             List of chunk dictionaries with similarity scores
         """
-        if self.index is None or self.index.ntotal == 0:
+        if self.tfidf_matrix is None or len(self.chunks) == 0:
             return []
         
         # Limit top_k to available chunks
-        top_k = min(top_k, self.index.ntotal)
+        top_k = min(top_k, len(self.chunks))
         
-        # Encode query
-        query_embedding = self.model.encode(
-            [query],
-            convert_to_numpy=True,
-            show_progress_bar=False,
-            normalize_embeddings=True
-        ).astype('float32')
+        # Transform query
+        query_vector = self.vectorizer.transform([query])
         
-        # Search FAISS
-        distances, indices = self.index.search(query_embedding, top_k)
+        # Calculate cosine similarity
+        similarities = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
+        
+        # Get top-k indices
+        top_indices = np.argsort(similarities)[::-1][:top_k]
         
         # Build results
         results = []
-        for i, (dist, idx) in enumerate(zip(distances[0], indices[0])):
-            if idx < len(self.chunks):
-                chunk = self.chunks[idx].copy()
-                # Convert L2 distance to similarity score (0-1)
-                chunk["score"] = float(1 / (1 + dist))
-                chunk["rank"] = i + 1
-                results.append(chunk)
+        for i, idx in enumerate(top_indices):
+            chunk = self.chunks[idx].copy()
+            chunk["score"] = float(similarities[idx])
+            chunk["rank"] = i + 1
+            results.append(chunk)
         
         return results
     
@@ -115,17 +92,22 @@ class FAISSRetriever:
         """Get retriever statistics."""
         return {
             "total_chunks": len(self.chunks),
-            "index_size": self.index.ntotal if self.index else 0,
-            "dimension": self.dimension,
-            "model": EMBEDDING_MODEL
+            "index_size": len(self.chunks),
+            "dimension": self.vectorizer.max_features if self.vectorizer else 0,
+            "model": "TF-IDF (scikit-learn)"
         }
     
     def clear(self):
         """Clear all stored chunks and reset index."""
-        self.index = None
+        self.tfidf_matrix = None
         self.chunks = []
+        self.vectorizer = TfidfVectorizer(
+            max_features=5000,
+            stop_words='english',
+            ngram_range=(1, 2)
+        )
         print("Retriever cleared")
 
 
 # Singleton instance
-retriever = FAISSRetriever()
+retriever = TFIDFRetriever()

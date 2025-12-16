@@ -51,9 +51,6 @@ TOP_K_CHUNKS = 3
 CHUNK_SIZE = 600  # tokens (target 500-700)
 CHUNK_OVERLAP = 100
 
-# Embedding model (lightweight)
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-
 # RAG Prompt Template
 RAG_PROMPT_TEMPLATE = """You are a retrieval-augmented assistant.
 Answer using ONLY the provided context.
