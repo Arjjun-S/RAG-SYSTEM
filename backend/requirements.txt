@@ -11,10 +11,10 @@ requests==2.31.0
 
 # Embeddings - lightweight, no Rust required
 numpy>=1.24.0
-scikit-learn>=1.3.0
+scikit-learn>=1.4.0
 
 # PDF processing
 pypdf>=4.0.0
 
 # Data validation
-pydantic==2.5.2
+pydantic==2.9.2

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: rag-backend
+    env: python
+    rootDir: backend
+    pythonVersion: 3.11.7
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+
+  - type: static
+    name: rag-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://rag-backend.onrender.com
