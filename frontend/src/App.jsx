@@ -1,14 +1,11 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState } from 'react'
 import Upload from './components/Upload'
 import Chat from './components/Chat'
 import Sources from './components/Sources'
 
-// API base URL: must be provided via VITE_API_URL in production.
-// Fallbacks help local dev but avoid 404 in production static hosting.
+// API base URL
 const resolveApiBase = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
-  if (window?.__API_BASE) return window.__API_BASE
-  // Dev fallback to Vite proxy
   return '/api'
 }
 
@@ -18,30 +15,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [stats, setStats] = useState({ total_chunks: 0 })
-  const [apiBase, setApiBase] = useState(resolveApiBase())
-
-  // Warn if API base is missing to avoid silent 404s in production
-  const apiConfigured = useMemo(() => !!apiBase && apiBase !== '/api', [apiBase])
-
-  useEffect(() => {
-    if (!apiConfigured) {
-      console.warn('VITE_API_URL is not set; falling back to /api (dev proxy). Set VITE_API_URL in production.')
-      setError('API URL not configured. Set VITE_API_URL to your backend URL.')
-    }
-  }, [apiConfigured])
-
-  // Fetch stats
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch(`${apiBase}/stats`)
-      if (res.ok) {
-        const data = await res.json()
-        setStats(data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err)
-    }
-  }, [])
+  const [apiBase] = useState(resolveApiBase())
 
   // Handle document upload
   const handleUpload = async (file) => {
@@ -133,48 +107,49 @@ function App() {
 
   return (
     <div className="app">
+      {/* Header with Logo */}
       <header className="header">
-        <h1>📚 RAG Demo</h1>
-        <p>Upload documents and ask questions with AI-powered answers</p>
+        <img src="/logo.svg" alt="RAG Mini" className="logo" />
       </header>
 
-      {/* Stats Bar */}
-      <div className="stats-bar">
-        <div className="stat-item">
-          <span>📄 Documents:</span>
-          <span className="stat-value">{documents.length}</span>
-        </div>
-        <div className="stat-item">
-          <span>🧩 Chunks:</span>
-          <span className="stat-value">{stats.total_chunks}</span>
-        </div>
-        {documents.length > 0 && (
-          <button className="clear-button" onClick={handleClear}>
-            🗑️ Clear All
-          </button>
-        )}
-      </div>
+      {/* Main Content */}
+      <main className="main-content">
+        {/* Left Side - Upload Section */}
+        <section className="left-section">
+          <Upload 
+            onUpload={handleUpload} 
+            documents={documents}
+            stats={stats}
+            isLoading={isLoading}
+            onClear={handleClear}
+          />
+        </section>
 
-      {/* Upload Section */}
-      <Upload 
-        onUpload={handleUpload} 
-        documents={documents}
-        isLoading={isLoading}
-      />
+        {/* Right Side - Hero and Chat */}
+        <section className="right-section">
+          {/* Hero Image with Speech Bubble */}
+          <div className="hero-container">
+            <div className="speech-bubble">
+              <p>Hello people! This is RAG Mini. Upload your docs and run it for less hallucination. This host is free, so please don't upload too many files and overload it!</p>
+            </div>
+            <img src="/hero.svg" alt="RAG Mini Assistant" className="hero-image" />
+          </div>
 
-      {/* Chat Section */}
-      <Chat 
-        onAsk={handleAsk}
-        response={response}
-        isLoading={isLoading}
-        disabled={documents.length === 0}
-        error={error}
-      />
+          {/* Chat Section */}
+          <Chat 
+            onAsk={handleAsk}
+            response={response}
+            isLoading={isLoading}
+            disabled={documents.length === 0}
+            error={error}
+          />
 
-      {/* Sources Section */}
-      {response?.citations && response.citations.length > 0 && (
-        <Sources citations={response.citations} />
-      )}
+          {/* Sources Section */}
+          {response?.citations && response.citations.length > 0 && (
+            <Sources citations={response.citations} />
+          )}
+        </section>
+      </main>
     </div>
   )
 }

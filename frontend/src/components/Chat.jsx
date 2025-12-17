@@ -17,8 +17,8 @@ function Chat({ onAsk, response, isLoading, disabled, error }) {
   }
 
   return (
-    <div className="card">
-      <h2 className="card-title">💬 Ask a Question</h2>
+    <div className="chat-section">
+      <h2 className="section-title">Ask a Question</h2>
       
       <div className="chat-container">
         <form onSubmit={handleSubmit} className="chat-input-wrapper">
@@ -34,10 +34,10 @@ function Chat({ onAsk, response, isLoading, disabled, error }) {
           />
           <button 
             type="submit" 
-            className="send-button"
+            className="ask-button"
             disabled={isLoading || disabled || !question.trim()}
           >
-            {isLoading ? '...' : 'Ask'}
+            {isLoading ? '...' : 'ASK'}
           </button>
         </form>
 
@@ -49,34 +49,30 @@ function Chat({ onAsk, response, isLoading, disabled, error }) {
                 <span></span>
                 <span></span>
               </div>
-              <p style={{ marginTop: '0.5rem' }}>Thinking...</p>
+              <p>Thinking...</p>
             </div>
           ) : error ? (
-            <div style={{ textAlign: 'center' }}>
-              <span className="status-badge error">❌ {error}</span>
-            </div>
+            <div className="error-text">{error}</div>
           ) : response ? (
             <>
               <div className="response-header">
-                <span style={{ fontWeight: '600' }}>Answer</span>
+                <span className="answer-label">Answer</span>
                 {response.model_used && (
-                  <span className="model-badge">
-                    🤖 {response.model_used}
-                  </span>
+                  <span className="model-badge">{response.model_used}</span>
                 )}
               </div>
               <div className="response-text">{response.answer}</div>
               {response.context_tokens && (
-                <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  📊 Used {response.chunks_used} chunks ({response.context_tokens} tokens)
+                <div className="response-meta">
+                  Used {response.chunks_used} chunks ({response.context_tokens} tokens)
                 </div>
               )}
             </>
           ) : (
             <div className="placeholder-text">
               {disabled 
-                ? '📤 Upload a document to get started'
-                : '🔍 Your answer will appear here'}
+                ? 'Upload a document to get started'
+                : 'Your answer will appear here'}
             </div>
           )}
         </div>

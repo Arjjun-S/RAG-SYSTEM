@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 
-function Upload({ onUpload, documents, isLoading }) {
+function Upload({ onUpload, documents, stats, isLoading, onClear }) {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadStatus, setUploadStatus] = useState(null)
   const fileInputRef = useRef(null)
@@ -30,12 +30,10 @@ function Upload({ onUpload, documents, isLoading }) {
     if (files.length > 0) {
       await processFile(files[0])
     }
-    // Reset input
     e.target.value = ''
   }
 
   const processFile = async (file) => {
-    // Validate file type
     const validTypes = ['.pdf', '.txt']
     const fileExt = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
     
@@ -44,7 +42,6 @@ function Upload({ onUpload, documents, isLoading }) {
       return
     }
 
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       setUploadStatus({ type: 'error', message: 'File too large. Maximum size is 5MB.' })
       return
@@ -56,7 +53,6 @@ function Upload({ onUpload, documents, isLoading }) {
 
     if (result.success) {
       setUploadStatus({ type: 'success', message: `${file.name} uploaded successfully!` })
-      // Clear status after 3 seconds
       setTimeout(() => setUploadStatus(null), 3000)
     } else {
       setUploadStatus({ type: 'error', message: result.error || 'Upload failed' })
@@ -68,8 +64,8 @@ function Upload({ onUpload, documents, isLoading }) {
   }
 
   return (
-    <div className="card">
-      <h2 className="card-title">📤 Upload Documents</h2>
+    <div className="upload-section">
+      <h2 className="section-title">Upload Documents</h2>
       
       <div 
         className={`upload-zone ${isDragging ? 'dragging' : ''}`}
@@ -85,7 +81,7 @@ function Upload({ onUpload, documents, isLoading }) {
           accept=".pdf,.txt"
           disabled={isLoading}
         />
-        <div className="upload-icon">📁</div>
+        <img src="/folder-icon.svg" alt="Upload" className="upload-icon" />
         <p className="upload-text">
           {isLoading ? 'Processing...' : 'Drop files here or click to upload'}
         </p>
@@ -94,33 +90,36 @@ function Upload({ onUpload, documents, isLoading }) {
 
       {/* Upload Status */}
       {uploadStatus && (
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <span className={`status-badge ${uploadStatus.type}`}>
-            {uploadStatus.type === 'loading' && '⏳'}
-            {uploadStatus.type === 'success' && '✅'}
-            {uploadStatus.type === 'error' && '❌'}
-            {uploadStatus.message}
-          </span>
+        <div className={`upload-status ${uploadStatus.type}`}>
+          {uploadStatus.message}
         </div>
       )}
 
-      {/* Document List */}
-      {documents.length > 0 && (
-        <div className="document-list">
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
-            Uploaded Documents
-          </h3>
-          {documents.map((doc, index) => (
-            <div key={index} className="document-item">
-              <div className="document-info">
-                <span>{doc.filename.endsWith('.pdf') ? '📄' : '📝'}</span>
-                <span>{doc.filename}</span>
+      {/* Stats and Clear */}
+      <div className="stats-row">
+        <span>Documents: {documents.length}</span>
+        <span>Chunks: {stats?.total_chunks || 0}</span>
+        {documents.length > 0 && (
+          <button className="clear-btn" onClick={onClear}>clear all</button>
+        )}
+      </div>
+
+      {/* Uploaded Documents Box */}
+      <div className="uploaded-docs-box">
+        <h3 className="uploaded-title">Uploaded Documents</h3>
+        <div className="docs-list">
+          {documents.length === 0 ? (
+            <div className="no-docs">No documents uploaded yet</div>
+          ) : (
+            documents.map((doc, index) => (
+              <div key={index} className="doc-item">
+                <span className="doc-name">{doc.filename}</span>
+                <span className="doc-chunks">{doc.chunks} chunks</span>
               </div>
-              <span className="chunk-count">{doc.chunks} chunks</span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
