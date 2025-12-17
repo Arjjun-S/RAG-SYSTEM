@@ -12,11 +12,12 @@
   --success: #48bb78;
   --error: #f56565;
   --warning: #ed8936;
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
+  --bg-primary: #fdf6f3;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
   --text-primary: #2d3748;
   --text-secondary: #718096;
-  --border: #e2e8f0;
+  --border: #e8ddd9;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
@@ -89,12 +90,12 @@ body {
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
 }
 
 .upload-zone:hover {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.02);
+  background: rgba(253, 246, 243, 0.8);
 }
 
 .upload-zone.dragging {
@@ -237,26 +238,39 @@ body {
   padding: 1rem;
 }
 
-.speech-bubble {
+.thought-bubble {
   position: relative;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   border: 2px solid var(--border);
-  border-radius: 16px;
-  padding: 1rem;
+  border-radius: 20px;
+  padding: 1rem 1.25rem;
   max-width: 280px;
   font-size: 0.8rem;
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
-.speech-bubble::after {
+.thought-bubble::before,
+.thought-bubble::after {
   content: '';
   position: absolute;
-  right: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 8px solid transparent;
-  border-left-color: var(--border);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+}
+
+.thought-bubble::after {
+  width: 20px;
+  height: 20px;
+  right: -15px;
+  bottom: 20px;
+}
+
+.thought-bubble::before {
+  width: 12px;
+  height: 12px;
+  right: -28px;
+  bottom: 10px;
 }
 
 .hero-image {
@@ -455,19 +469,114 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .app {
+    padding: 0.75rem;
+  }
+
+  .header {
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+  }
+
+  .logo {
+    max-height: 45px;
+  }
+
   .main-content {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
-  
+
   .hero-container {
     justify-content: center;
+    flex-direction: row;
+    padding: 0.75rem;
   }
-  
-  .speech-bubble {
-    max-width: 200px;
+
+  .thought-bubble {
+    max-width: 180px;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
   }
-  
+
+  .thought-bubble::after {
+    width: 14px;
+    height: 14px;
+    right: -10px;
+    bottom: 15px;
+  }
+
+  .thought-bubble::before {
+    width: 8px;
+    height: 8px;
+    right: -18px;
+    bottom: 8px;
+  }
+
   .hero-image {
     width: 80px;
+  }
+
+  .upload-zone {
+    padding: 2rem 1rem;
+  }
+
+  .section-title {
+    font-size: 0.9rem;
+  }
+
+  .stats-row {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .chat-input-wrapper {
+    flex-direction: column;
+  }
+
+  .ask-button {
+    width: 100%;
+  }
+
+  .response-area {
+    padding: 1rem;
+  }
+
+  .source-item {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 0.5rem;
+  }
+
+  .logo {
+    max-height: 35px;
+  }
+
+  .hero-container {
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+
+  .thought-bubble {
+    max-width: 100%;
+  }
+
+  .thought-bubble::after,
+  .thought-bubble::before {
+    display: none;
+  }
+
+  .hero-image {
+    width: 70px;
+    margin-bottom: 0.5rem;
+  }
+
+  .uploaded-docs-box {
+    padding: 0.75rem;
   }
 }

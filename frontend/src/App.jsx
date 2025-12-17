@@ -109,7 +109,7 @@ function App() {
     <div className="app">
       {/* Header with Logo */}
       <header className="header">
-        <img src="/logo.svg" alt="RAG Mini" className="logo" />
+        <img src="/logo.png" alt="RAG Mini" className="logo" />
       </header>
 
       {/* Main Content */}
@@ -127,12 +127,12 @@ function App() {
 
         {/* Right Side - Hero and Chat */}
         <section className="right-section">
-          {/* Hero Image with Speech Bubble */}
+          {/* Hero Image with Thought Bubble */}
           <div className="hero-container">
-            <div className="speech-bubble">
+            <div className="thought-bubble">
               <p>Hello people! This is RAG Mini. Upload your docs and run it for less hallucination. This host is free, so please don't upload too many files and overload it!</p>
             </div>
-            <img src="/hero.svg" alt="RAG Mini Assistant" className="hero-image" />
+            <img src="/hero.png" alt="RAG Mini Assistant" className="hero-image" />
           </div>
 
           {/* Chat Section */}
