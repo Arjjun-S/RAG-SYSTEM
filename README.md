@@ -1,264 +1,368 @@
-# 📚 RAG Demo Application
+# RAG Mini
 
-A lightweight Retrieval-Augmented Generation (RAG) web application designed for **Render free tier deployment**. Perfect for portfolio demonstrations and technical interviews.
+A lightweight Retrieval-Augmented Generation (RAG) web application designed for free-tier deployment. Upload documents, ask questions, and get accurate answers with source citations.
 
-![RAG Architecture](https://img.shields.io/badge/Architecture-RAG-blue)
-![Python](https://img.shields.io/badge/Python-3.10+-green)
-![React](https://img.shields.io/badge/React-18-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+**Live Demo:** [https://rag-frontend-mldy.onrender.com/](https://rag-frontend-mldy.onrender.com/)
 
-## 🎯 Features
+---
 
-- **Document Upload**: Support for PDF and TXT files
-- **Semantic Search**: FAISS-powered vector similarity search
-- **Multi-Model Failover**: Automatic fallback across 3 free LLMs
-- **Citations**: Answers include source references
-- **Stateless Design**: Optimized for free tier deployment
-- **Clean UI**: Simple, interview-ready interface
+## Screenshots
 
-## 🏗️ Architecture
+### Home View
+![RAG Mini Home](screenshots/home.png)
+*The main interface with upload section and chat*
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   React Frontend │────▶│  FastAPI Backend │────▶│  OpenRouter API │
-│   (Vite)         │     │  (Python)        │     │  (Free LLMs)    │
-└─────────────────┘     └────────┬─────────┘     └─────────────────┘
-                                 │
-                        ┌────────▼─────────┐
-                        │   FAISS Index    │
-                        │   (In-Memory)    │
-                        └──────────────────┘
-```
+### Document Upload
+![Document Upload](screenshots/upload.png)
+*Uploading a document to the knowledge base*
 
-### RAG Flow
+### Asking Questions
+![Asking Question](screenshots/asking.png)
+*Submitting a question about the uploaded documents*
 
-1. **Upload**: Document → Text Extraction → Chunking → Embedding → FAISS Index
-2. **Query**: Question → Embedding → Semantic Search → Top-K Retrieval
-3. **Generate**: Context + Question → LLM (with failover) → Answer + Citations
+### Answer with Citations
+![Answer Display](screenshots/answer.png)
+*Response with source citations from the uploaded documents*
 
-## 🧠 Models (Free Tier)
+---
 
-The application uses three OpenRouter models with automatic failover:
+## What is RAG?
 
-| Priority | Model | Context Limit | Timeout |
-|----------|-------|---------------|---------|
-| 1️⃣ Primary | Hermes 3 405B | 8,000 tokens | 8s |
-| 2️⃣ Secondary | Mistral 7B | 4,000 tokens | 8s |
-| 3️⃣ Fallback | Llama 3.3 70B | 3,000 tokens | 8s |
+Retrieval-Augmented Generation (RAG) is an AI technique that combines information retrieval with text generation. Instead of relying solely on a language model's training data, RAG:
 
-### Failover Strategy
+1. **Retrieves** relevant information from your uploaded documents
+2. **Augments** the prompt with this retrieved context
+3. **Generates** an answer grounded in your actual data
+
+This significantly reduces hallucination and provides accurate, source-backed responses.
+
+---
+
+## System Architecture
 
 ```
-Request → Model 1 (Hermes)
-              │
-              ▼ Timeout/Error?
-          Model 2 (Mistral)
-              │
-              ▼ Timeout/Error?
-          Model 3 (Llama)
-              │
-              ▼ All failed?
-          Return error
+                                    RAG Mini Architecture
+                                    
+    +------------------+          +----------------------+          +-------------------+
+    |                  |          |                      |          |                   |
+    |  React Frontend  |  <---->  |   FastAPI Backend    |  <---->  |  OpenRouter API   |
+    |     (Vite)       |   HTTP   |      (Python)        |   HTTPS  |   (Free LLMs)     |
+    |                  |          |                      |          |                   |
+    +------------------+          +----------+-----------+          +-------------------+
+                                             |
+                                             |
+                                  +----------v-----------+
+                                  |                      |
+                                  |  TF-IDF Vectorizer   |
+                                  |    (In-Memory)       |
+                                  |                      |
+                                  +----------------------+
 ```
 
-## ⚡ Free Tier Optimizations
+### Data Flow
 
-| Optimization | Implementation |
-|-------------|----------------|
-| No persistent storage | FAISS recreated on startup |
-| Lightweight embeddings | all-MiniLM-L6-v2 (22M params) |
-| Limited context | Max 3 chunks per query |
-| Aggressive timeouts | 8 seconds per model |
-| Small chunk size | 500-700 tokens |
-| In-memory only | No database required |
+```
+DOCUMENT INGESTION:
+                                                                        
+  PDF/TXT File --> Text Extraction --> Text Chunking --> TF-IDF Vectorization --> In-Memory Store
+                                            |
+                                            v
+                                   (600 chars per chunk)
 
-## 🚀 Quick Start
+
+QUESTION ANSWERING:
+
+  User Question --> TF-IDF Query --> Retrieve Top 3 Chunks --> Build Context
+                                                                     |
+                                                                     v
+                                                          Prompt + Context --> LLM
+                                                                                 |
+                                                                                 v
+                                                                    Answer + Citations --> User
+```
+
+---
+
+## How It Works
+
+### 1. Document Upload
+
+When you upload a document (PDF or TXT):
+
+- **Text Extraction**: The system extracts raw text from the file using `pypdf` for PDFs
+- **Chunking**: Text is split into overlapping chunks of ~600 characters with 100 character overlap
+- **Vectorization**: Each chunk is converted to a TF-IDF vector for similarity matching
+- **Storage**: Vectors and text are stored in memory (no database required)
+
+### 2. Question Processing
+
+When you ask a question:
+
+- **Query Vectorization**: Your question is converted to a TF-IDF vector
+- **Similarity Search**: The system finds the 3 most relevant chunks using cosine similarity
+- **Context Building**: Retrieved chunks are combined into a context block
+
+### 3. Answer Generation
+
+The context and question are sent to an LLM:
+
+- **Prompt Engineering**: A carefully designed prompt instructs the model to answer based only on the provided context
+- **Multi-Model Failover**: If one model times out, the system automatically tries the next
+- **Citation Extraction**: The answer includes references to source documents
+
+---
+
+## Models and Failover Strategy
+
+RAG Mini uses three OpenRouter models with automatic failover:
+
+| Priority | Model | Description |
+|----------|-------|-------------|
+| Primary | NousResearch Hermes 3 405B | Large, high-quality responses |
+| Secondary | Mistral 7B Instruct | Fast, reliable fallback |
+| Tertiary | Meta Llama 3.3 70B | Final fallback option |
+
+### Failover Logic
+
+```
+Request --> Hermes 3 405B (8s timeout)
+                |
+                +--> Success? Return response
+                |
+                +--> Timeout/Error? --> Mistral 7B (8s timeout)
+                                            |
+                                            +--> Success? Return response
+                                            |
+                                            +--> Timeout/Error? --> Llama 3.3 70B (8s timeout)
+                                                                        |
+                                                                        +--> Success? Return response
+                                                                        |
+                                                                        +--> All failed? Return error
+```
+
+Each model has an 8-second timeout. This ensures reasonable response times even when free-tier models experience high load.
+
+---
+
+## Accuracy Considerations
+
+### What Makes RAG Mini Accurate
+
+1. **Grounded Responses**: Answers are based on your uploaded documents, not general training data
+2. **Source Citations**: Every answer shows which document chunks were used
+3. **Focused Context**: Only the top 3 most relevant chunks are used, reducing noise
+4. **Instruction Tuning**: The prompt explicitly tells the model to say "I don't know" if the answer isn't in the context
+
+### Limitations Affecting Accuracy
+
+1. **TF-IDF vs Semantic Search**: TF-IDF matches keywords, not meaning. Synonyms or paraphrased content may not be retrieved
+2. **Chunk Boundaries**: Important information split across chunks may lose context
+3. **Free Model Variability**: Free-tier models may have inconsistent quality
+4. **No Persistence**: All data is lost when the server restarts
+
+### Accuracy Tips
+
+- Upload focused, relevant documents
+- Ask specific questions with keywords that appear in your documents
+- Keep documents under 50 pages for best results
+- If an answer seems wrong, rephrase your question
+
+---
+
+## Technical Specifications
+
+| Component | Implementation |
+|-----------|----------------|
+| Backend Framework | FastAPI (Python) |
+| Frontend Framework | React 18 + Vite |
+| Vector Search | TF-IDF with scikit-learn |
+| PDF Processing | pypdf |
+| LLM Provider | OpenRouter (free tier) |
+| Deployment | Render (free tier) |
+
+### Configuration Parameters
+
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| Chunk Size | 600 characters | Balance between context and precision |
+| Chunk Overlap | 100 characters | Preserve context across boundaries |
+| Top-K Retrieval | 3 chunks | Limit context size for free models |
+| Model Timeout | 8 seconds | Ensure responsive failover |
+| Max Features | 5000 | TF-IDF vocabulary limit |
+
+---
+
+## Project Structure
+
+```
+RAG-SYSTEM/
+|
++-- backend/
+|   +-- main.py              # FastAPI application and endpoints
+|   +-- config.py            # Configuration and model settings
+|   +-- llm_router.py        # Multi-model failover logic
+|   +-- ingest.py            # Document ingestion pipeline
+|   +-- retriever.py         # TF-IDF vector search
+|   +-- qa.py                # Question-answering pipeline
+|   +-- utils/
+|   |   +-- loaders.py       # PDF and TXT file loaders
+|   |   +-- chunker.py       # Text chunking logic
+|   +-- requirements.txt     # Python dependencies
+|
++-- frontend/
+|   +-- src/
+|   |   +-- components/
+|   |   |   +-- Upload.jsx   # File upload component
+|   |   |   +-- Chat.jsx     # Chat interface
+|   |   |   +-- Sources.jsx  # Citations display
+|   |   +-- App.jsx          # Main application
+|   |   +-- main.jsx         # Entry point
+|   |   +-- index.css        # Styles
+|   +-- public/              # Static assets
+|   +-- package.json         # Node dependencies
+|   +-- vite.config.js       # Vite configuration
+|
++-- render.yaml              # Render deployment config
++-- runtime.txt              # Python version specification
++-- README.md
+```
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| POST | `/upload` | Upload a document (PDF/TXT) |
+| POST | `/ask` | Ask a question |
+| GET | `/stats` | Get system statistics |
+| POST | `/clear` | Clear all documents |
+
+### Upload Document
+
+```bash
+curl -X POST https://your-backend.onrender.com/upload \
+  -F "file=@document.pdf"
+```
+
+### Ask Question
+
+```bash
+curl -X POST https://your-backend.onrender.com/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the main topic?", "top_k": 3}'
+```
+
+---
+
+## Local Development
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.11+
 - Node.js 18+
-- OpenRouter API key ([Get free key](https://openrouter.ai/))
+- OpenRouter API key (free at [openrouter.ai](https://openrouter.ai/))
 
 ### Backend Setup
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Set environment variable
-export OPENROUTER_API_KEY="your-api-key-here"
-
-# Run server
-uvicorn main:app --host 0.0.0.0 --port 10000 --reload
+export OPENROUTER_API_KEY="your-api-key"
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ### Frontend Setup
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
+---
 
-## 📁 Project Structure
+## Deployment on Render
 
-```
-rag-app/
-│
-├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── config.py            # Configuration & models
-│   ├── llm_router.py        # Multi-model failover
-│   ├── ingest.py            # Document ingestion
-│   ├── retriever.py         # FAISS vector store
-│   ├── qa.py                # RAG pipeline
-│   ├── utils/
-│   │   ├── loaders.py       # PDF/TXT extraction
-│   │   └── chunker.py       # Text chunking
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Upload.jsx   # File upload
-│   │   │   ├── Chat.jsx     # Q&A interface
-│   │   │   └── Sources.jsx  # Citations display
-│   │   ├── App.jsx          # Main component
-│   │   ├── main.jsx         # Entry point
-│   │   └── index.css        # Styles
-│   ├── package.json
-│   └── vite.config.js
-│
-└── README.md
-```
+### Backend (Web Service)
 
-## 🔌 API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | API information |
-| GET | `/health` | Health check |
-| POST | `/upload` | Upload document |
-| POST | `/ask` | Ask question |
-| GET | `/stats` | System statistics |
-| POST | `/clear` | Clear all documents |
-
-### Example Requests
-
-**Upload Document:**
-```bash
-curl -X POST http://localhost:10000/upload \
-  -F "file=@document.pdf"
-```
-
-**Ask Question:**
-```bash
-curl -X POST http://localhost:10000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is the main topic?", "top_k": 3}'
-```
-
-## 🌐 Deployment (Render)
-
-### Backend Deployment
-
-1. Create a new **Web Service** on Render
+1. Create a Web Service on Render
 2. Connect your GitHub repository
-3. Configure:
-   - **Root Directory**: `backend`
-   - **Runtime**: Python 3
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port 10000`
-4. Add environment variable:
-   - `OPENROUTER_API_KEY`: Your API key
+3. Set Root Directory: `backend`
+4. Set Build Command: `pip install -r requirements.txt`
+5. Set Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+6. Add Environment Variable: `OPENROUTER_API_KEY`
 
-### Frontend Deployment
+### Frontend (Static Site)
 
-1. Create a new **Static Site** on Render
+1. Create a Static Site on Render
 2. Connect your GitHub repository
-3. Configure:
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist`
-4. Add environment variable:
-   - `VITE_API_URL`: Your backend URL (e.g., `https://your-backend.onrender.com`)
-
-## 💡 Example Questions
-
-After uploading a document, try these questions:
-
-- "What is the main topic of this document?"
-- "Summarize the key points."
-- "What are the conclusions mentioned?"
-- "Who are the main people or organizations discussed?"
-- "What dates or timeframes are mentioned?"
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `OPENROUTER_API_KEY` | OpenRouter API key | Yes |
-| `SITE_URL` | Your site URL (for OpenRouter) | No |
-| `SITE_NAME` | Your site name (for OpenRouter) | No |
-| `VITE_API_URL` | Backend API URL (frontend) | Production only |
-
-### Customization
-
-Edit `backend/config.py` to adjust:
-- Chunk size and overlap
-- Number of retrieved chunks
-- Model priorities and timeouts
-- Prompt template
-
-## ⚠️ Limitations
-
-This is a **demonstration project** with intentional limitations:
-
-- **No persistence**: Data is lost on restart
-- **Memory constraints**: Limited by free tier RAM
-- **Rate limits**: Subject to OpenRouter free tier limits
-- **No authentication**: Open access by design
-- **Single user**: Not designed for concurrent heavy usage
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Backend | FastAPI, Python 3.10+ |
-| Vector Store | FAISS (in-memory) |
-| Embeddings | SentenceTransformers (all-MiniLM-L6-v2) |
-| LLM API | OpenRouter (free tier) |
-| Frontend | React 18, Vite |
-| Styling | Plain CSS |
-| Deployment | Render (free tier) |
-
-## 📄 License
-
-MIT License - Feel free to use for your portfolio!
-
-## 🙏 Acknowledgments
-
-- [OpenRouter](https://openrouter.ai/) for free LLM access
-- [Sentence Transformers](https://sbert.net/) for embeddings
-- [FAISS](https://github.com/facebookresearch/faiss) for vector search
-- [FastAPI](https://fastapi.tiangolo.com/) for the backend framework
-- [Vite](https://vitejs.dev/) for frontend tooling
+3. Set Root Directory: `frontend`
+4. Set Build Command: `npm install && npm run build`
+5. Set Publish Directory: `dist`
+6. Add Environment Variable: `VITE_API_URL` (your backend URL)
 
 ---
 
-**Built for learning and demonstration purposes.** Perfect for showing RAG fundamentals in interviews! 🎯
+## Important Usage Guidelines
+
+This application runs on free-tier infrastructure. Please be considerate:
+
+### Do
+
+- Upload small to medium documents (under 50 pages)
+- Ask focused, specific questions
+- Wait for responses before sending new requests
+- Clear documents when you're done testing
+
+### Do Not
+
+- Upload large files or many documents at once
+- Send rapid-fire requests
+- Use this for production workloads
+- Rely on data persistence (everything resets on restart)
+
+### Why These Guidelines Matter
+
+- **Free Tier Limits**: OpenRouter free models have rate limits
+- **Shared Resources**: The Render free tier has limited memory and CPU
+- **No Queue System**: Concurrent requests may cause failures
+- **Stateless Design**: Memory is limited; too many documents will cause crashes
+
+---
+
+## Limitations
+
+| Limitation | Reason |
+|------------|--------|
+| No data persistence | Free tier has no disk storage |
+| Memory constraints | Limited to ~512MB on free tier |
+| Cold starts | Server sleeps after inactivity |
+| Rate limits | OpenRouter free tier restrictions |
+| No authentication | Designed for demos only |
+| Single region | Higher latency for distant users |
+
+---
+
+## Built With
+
+- [FastAPI](https://fastapi.tiangolo.com/) - Python web framework
+- [React](https://react.dev/) - Frontend library
+- [Vite](https://vitejs.dev/) - Frontend build tool
+- [scikit-learn](https://scikit-learn.org/) - TF-IDF vectorization
+- [pypdf](https://pypdf.readthedocs.io/) - PDF text extraction
+- [OpenRouter](https://openrouter.ai/) - LLM API access
+- [Render](https://render.com/) - Deployment platform
+
+---
+
+## License
+
+MIT License - Free to use and modify.
+
+---
+
+**Note**: This is a demonstration project designed for learning and portfolio purposes. For production use cases, consider using persistent vector databases, semantic embeddings, and paid LLM tiers.
