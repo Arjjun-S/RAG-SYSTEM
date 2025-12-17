@@ -1,4 +1,4 @@
-<img width="640" height="108" alt="Screenshot 2025-12-17 at 11 33 14 AM" src="https://github.com/user-attachments/assets/4b15ed20-0fa1-493b-b570-8ae878922f5d" />
+<img width="1280" height="126" alt="Screenshot 2025-12-17 at 11 34 07 AM" src="https://github.com/user-attachments/assets/a3246cae-5a47-4960-a74d-3bdcd82fe35d" />
 
 A lightweight Retrieval-Augmented Generation (RAG) web application designed for free-tier deployment. Upload documents, ask questions, and get accurate answers with source citations.
 
