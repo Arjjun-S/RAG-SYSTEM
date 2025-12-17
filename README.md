@@ -1,4 +1,4 @@
-# RAG Mini
+<img width="640" height="108" alt="Screenshot 2025-12-17 at 11 33 14 AM" src="https://github.com/user-attachments/assets/4b15ed20-0fa1-493b-b570-8ae878922f5d" />
 
 A lightweight Retrieval-Augmented Generation (RAG) web application designed for free-tier deployment. Upload documents, ask questions, and get accurate answers with source citations.
 
@@ -9,19 +9,20 @@ A lightweight Retrieval-Augmented Generation (RAG) web application designed for 
 ## Screenshots
 
 ### Home View
-![RAG Mini Home](screenshots/home.png)
+<img width="1280" height="800" alt="Screenshot 2025-12-17 at 11 09 49 AM" src="https://github.com/user-attachments/assets/2b821cf1-5a9e-4cae-86a0-edd4aaa735eb" />
 *The main interface with upload section and chat*
 
 ### Document Upload
-![Document Upload](screenshots/upload.png)
+<img width="1280" height="800" alt="Screenshot 2025-12-17 at 11 10 11 AM" src="https://github.com/user-attachments/assets/31dda62f-99b9-4e91-8f7d-98d332b22ebb" />
 *Uploading a document to the knowledge base*
 
 ### Asking Questions
-![Asking Question](screenshots/asking.png)
+<img width="1280" height="800" alt="Screenshot 2025-12-17 at 11 11 24 AM" src="https://github.com/user-attachments/assets/af20f162-172b-4c90-b0fb-edf747b31d58" />
 *Submitting a question about the uploaded documents*
 
 ### Answer with Citations
-![Answer Display](screenshots/answer.png)
+<img width="622" height="776" alt="Screenshot 2025-12-17 at 11 12 25 AM" src="https://github.com/user-attachments/assets/ea0d4cc7-bc8c-47bc-93ff-271eda18e84a" />
+
 *Response with source citations from the uploaded documents*
 
 ---
